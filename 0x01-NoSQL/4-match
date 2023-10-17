@@ -1,0 +1,2 @@
+// Script that lists all documents with name="Holberton school"
+db.school.fint({ name: "Holberto school" })
