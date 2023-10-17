@@ -8,40 +8,22 @@ Log stats
 from pymongo import MongoClient
 
 
-def log_stats():
-    """
-    Provides stats about Nginx logs stored in MongoDB
-    """
+if __name__ == "__main__":
+    """ Provides some stats about Nginx logs stored in MongoDB """
+    client = MongoClient('mongodb://127.0.0.1:27017')
+    nginx_collection = client.logs.nginx
 
-    # Connect to the MongoDB server
-    client = MongoClient("mongodb://127.0.0.1:27017")
+    n_logs = nginx_collection.count_documents({})
+    print(f'{n_logs} logs')
 
-    # Access the 'logs' database and 'nginx' collection
-    db = client.logs
-    collection = db.nginx
+    methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    print('Methods:')
+    for method in methods:
+        count = nginx_collection.count_documents({"method": method})
+        print(f'\tmethod {method}: {count}')
 
-    # Count the total number of documents in the collection
-    total_logs = collection.count_documents({})
-
-    # Count the number of documents with each HTTP method
-    http_methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-    method_counts = {
-        method: collection.count_documents({"method": method})
-        for method in http_methods
-    }
-
-    # Count the number of documents with method=GET and path=/status
-    status_check_count = collection.count_documents(
+    status_check = nginx_collection.count_documents(
         {"method": "GET", "path": "/status"}
     )
 
-    # Print the statistics
-    print(f"{total_logs} logs")
-    print("Methods:")
-    for method, count in method_counts.items():
-        print(f"    method {method}: {count}")
-    print(f"{status_check_count} status check")
-
-
-if __name__ == "__main__":
-    log_stats()
+    print(f'{status_check} status check')
