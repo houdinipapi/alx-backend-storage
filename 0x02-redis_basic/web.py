@@ -26,7 +26,7 @@ def count_requests(method: Callable) -> Callable:
         r.incr(f"count:{url}")
         cached_html = r.get(f"cached:{url}")
         if cached_html:
-            return cached_html.decode('utf-8')
+            return cached_html.decode("utf-8")
 
         html = method(url)
         r.setex(f"cached:{url}", 10, html)
