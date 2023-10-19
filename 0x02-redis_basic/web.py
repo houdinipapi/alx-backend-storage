@@ -4,32 +4,42 @@
 Implementing an expiring web cache and tracker.
 """
 
-from typing import Dict
+from functools import wraps
+from typing import Callable
 import redis
 import requests
 
+r = redis.Redis()
 
+
+def count_requests(method: Callable) -> Callable:
+    """
+    Decortator for counting how many times a request
+    has been made
+    """
+
+    @wraps(method)
+    def wrapper(url):
+        """
+        Wrapper for decorator functionality
+        """
+        r.incr(f"count:{url}")
+        cached_html = r.get(f"cached:{url}")
+        if cached_html:
+            return cached_html.decode('utf-8')
+
+        html = method(url)
+        r.setex(f"cached:{url}", 10, html)
+        return html
+
+    return wrapper
+
+
+@count_requests
 def get_page(url: str) -> str:
-    # Initialize a Redis client
-    r = redis.Redis()
-
-    # Check if the URL was accessed before
-    url_count_key = f"count:{url}"
-    count = r.get(url_count_key)
-
-    if count is not None:
-        # If the URL was accessed before, increment the count
-        count = int(count) + 1
-    else:
-        # If the URL was not accessed before,
-        # set the count to 1 and set an expiration time
-        count = 1
-        r.setex(url_count_key, 10, count)
-
-    # Use the slowwly.robertmurray.co.uk to simulate a slow response
-    response = requests.get(f"http://slowwly.robertomurray.co.uk/{url}")
-
-    # Get the HTML content
-    html_content = response.text
-
-    return html_conntent
+    """
+    Uses the requests module to obtain the HTML
+    content of a particular URL and returns it.
+    """
+    req = requests.get(url)
+    return req.text
