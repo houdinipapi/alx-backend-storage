@@ -7,6 +7,7 @@ Cache module
 import redis
 import uuid
 from typing import Union, Callable, Any
+from functools import wraps
 
 
 class Cache:
@@ -80,3 +81,23 @@ class Cache:
             int: The retrieved integer.
         """
         return self.get(key, fn=int)
+
+
+def count_calls(fn: Callable) -> Callable:
+    """
+    A decorator to count how many times a method of the Cache class is called.
+    """
+    counts = {}  # To store call counts for different methods
+
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        method_name = fn.__qualname__
+        if method_name in counts:
+            counts[method_name] += 1
+        else:
+            counts[method_name] = 1
+
+        result = fn(self, *args, **kwargs)
+        return result
+
+    return wrapper
